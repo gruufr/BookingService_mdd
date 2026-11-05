@@ -1,7 +1,5 @@
-version: '3.8'
-
 services:
-  api:
+  booking-service:
     build: .
     ports:
       - "8080:8080"
@@ -9,6 +7,19 @@ services:
       - CONNECTION_STRING=Host=db;Port=5432;Database=app;Username=postgres;Password=1234
     depends_on:
       - db
+      - notification-service
+    restart: always
+
+  user-service:
+    build: ./user-service
+    ports:
+      - "8081:8081"
+    restart: always
+
+  notification-service:
+    build: ./notification-service
+    ports:
+      - "8082:8082"
     restart: always
 
   db:

@@ -1,0 +1,6 @@
+user-service/
+notification-service/
+bin/
+obj/
+.git/
+.vs/
