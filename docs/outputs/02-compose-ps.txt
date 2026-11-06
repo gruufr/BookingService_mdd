@@ -1,0 +1,12 @@
+$ sudo docker compose -p bookingtemp -f docker-compose.yml -f deploy/docker-compose.server.yml ps --format 'table {{.Name}}\t{{.Image}}\t{{.Status}}\t{{.Ports}}'
+NAME                   IMAGE                              STATUS                    PORTS
+booking_booking        bookingtemp-booking-service        Up 30 seconds (healthy)   127.0.0.1:18080->8080/tcp
+booking_db             postgres:16                        Up 47 seconds (healthy)   127.0.0.1:15432->5432/tcp
+booking_hotel          bookingtemp-hotel-service          Up 41 seconds (healthy)   127.0.0.1:18083->8083/tcp
+booking_notification   bookingtemp-notification-service   Up 41 seconds (healthy)   127.0.0.1:18082->8082/tcp
+booking_user           bookingtemp-user-service           Up 41 seconds (healthy)   127.0.0.1:18081->8081/tcp
+booking_web            bookingtemp-web                    Up 30 seconds             127.0.0.1:8095->80/tcp
+
+$ sudo docker volume ls | grep db_data
+local     bookingtemp_db_data
+

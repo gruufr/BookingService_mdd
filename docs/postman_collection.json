@@ -1,0 +1,77 @@
+{
+  "info": {
+    "name": "Ночлег — Booking Service",
+    "description": "Запросы к сервисам напрямую (порты 8080–8083). Переменная base = http://localhost.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "base", "value": "http://localhost" },
+    { "key": "checkIn", "value": "2026-12-20" },
+    { "key": "checkOut", "value": "2026-12-23" },
+    { "key": "email", "value": "student@example.com" }
+  ],
+  "item": [
+    {
+      "name": "hotel-service :8083",
+      "item": [
+        { "name": "health", "request": { "method": "GET", "url": "{{base}}:8083/health" } },
+        { "name": "Все отели (по рейтингу)", "request": { "method": "GET", "url": "{{base}}:8083/hotels" } },
+        { "name": "Отели: 4★+, до 10000 ₽, дешевле сначала", "request": { "method": "GET", "url": "{{base}}:8083/hotels?minStars=4&maxPrice=10000&sort=price" } },
+        { "name": "Города", "request": { "method": "GET", "url": "{{base}}:8083/hotels/cities" } },
+        { "name": "Отель №1 + номера + отзывы", "request": { "method": "GET", "url": "{{base}}:8083/hotels/1" } },
+        { "name": "Номер №1", "request": { "method": "GET", "url": "{{base}}:8083/rooms/1" } },
+        {
+          "name": "Добавить отель",
+          "request": {
+            "method": "POST", "url": "{{base}}:8083/hotels",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"name\": \"Тестовый\",\n  \"city\": \"Тверь\",\n  \"address\": \"Набережная\",\n  \"stars\": 3,\n  \"pricePerNight\": 4000,\n  \"tagline\": \"Добавлен через Postman\",\n  \"description\": \"Проверка POST /hotels\",\n  \"imageUrl\": \"/img/hotel-1.jpg\",\n  \"amenities\": [\"Wi-Fi\"]\n}" }
+          }
+        }
+      ]
+    },
+    {
+      "name": "booking-service :8080",
+      "item": [
+        { "name": "health", "request": { "method": "GET", "url": "{{base}}:8080/health" } },
+        { "name": "Занятые номера отеля №1", "request": { "method": "GET", "url": "{{base}}:8080/availability?hotelId=1&checkIn={{checkIn}}&checkOut={{checkOut}}" } },
+        {
+          "name": "Создать бронь",
+          "request": {
+            "method": "POST", "url": "{{base}}:8080/bookings",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"roomId\": 1,\n  \"checkIn\": \"{{checkIn}}\",\n  \"checkOut\": \"{{checkOut}}\",\n  \"guests\": 2,\n  \"name\": \"Студент Демо\",\n  \"email\": \"{{email}}\"\n}" }
+          }
+        },
+        { "name": "Все брони", "request": { "method": "GET", "url": "{{base}}:8080/bookings" } },
+        { "name": "Брони гостя", "request": { "method": "GET", "url": "{{base}}:8080/bookings?email={{email}}" } },
+        { "name": "Бронь №1", "request": { "method": "GET", "url": "{{base}}:8080/bookings/1" } },
+        { "name": "Отменить бронь №1", "request": { "method": "POST", "url": "{{base}}:8080/bookings/1/cancel" } }
+      ]
+    },
+    {
+      "name": "user-service :8081",
+      "item": [
+        { "name": "health", "request": { "method": "GET", "url": "{{base}}:8081/health" } },
+        { "name": "Все гости", "request": { "method": "GET", "url": "{{base}}:8081/users" } },
+        { "name": "Гость по e-mail", "request": { "method": "GET", "url": "{{base}}:8081/users/by-email?email={{email}}" } },
+        {
+          "name": "Найти или создать гостя",
+          "request": {
+            "method": "POST", "url": "{{base}}:8081/users/resolve",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"name\": \"Студент Демо\",\n  \"email\": \"{{email}}\"\n}" }
+          }
+        }
+      ]
+    },
+    {
+      "name": "notification-service :8082",
+      "item": [
+        { "name": "health", "request": { "method": "GET", "url": "{{base}}:8082/health" } },
+        { "name": "Все уведомления", "request": { "method": "GET", "url": "{{base}}:8082/notifications" } },
+        { "name": "Уведомления гостя", "request": { "method": "GET", "url": "{{base}}:8082/notifications?email={{email}}" } }
+      ]
+    }
+  ]
+}

@@ -1,39 +1,99 @@
+# Ночлег — болванка сервиса бронирования отелей.
+# Запуск: docker compose up -d --build   →   сайт: http://localhost:8000
+
+x-db-env: &db-env
+  POSTGRES_USER: ${POSTGRES_USER:-postgres}
+  POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+
+x-service: &service
+  restart: unless-stopped
+  depends_on:
+    db:
+      condition: service_healthy
+
 services:
+  # Сайт + шлюз: отдаёт статику и проксирует /api/* в сервисы.
+  web:
+    build: ./web
+    container_name: booking_web
+    ports:
+      - "${WEB_PORT:-8000}:80"
+    depends_on:
+      - booking-service
+      - hotel-service
+      - user-service
+      - notification-service
+    restart: unless-stopped
+
+  # Бронирования. Вызывает hotel-, user- и notification-service.
   booking-service:
-    build: .
+    <<: *service
+    build: ./booking-service
+    container_name: booking_booking
+    environment:
+      CONNECTION_STRING: Host=db;Port=5432;Database=bookings_db;Username=${POSTGRES_USER:-postgres};Password=${POSTGRES_PASSWORD:-postgres}
+      HOTEL_SERVICE_URL: http://hotel-service:8083
+      USER_SERVICE_URL: http://user-service:8081
+      NOTIFICATION_SERVICE_URL: http://notification-service:8082
     ports:
       - "8080:8080"
-    environment:
-      - CONNECTION_STRING=Host=db;Port=5432;Database=app;Username=postgres;Password=1234
     depends_on:
-      - db
-      - notification-service
-    restart: always
+      db:
+        condition: service_healthy
+      hotel-service:
+        condition: service_healthy
+      user-service:
+        condition: service_healthy
+      notification-service:
+        condition: service_healthy
 
+  # Гости (создаются автоматически по e-mail).
   user-service:
+    <<: *service
     build: ./user-service
+    container_name: booking_user
+    environment:
+      CONNECTION_STRING: Host=db;Port=5432;Database=users_db;Username=${POSTGRES_USER:-postgres};Password=${POSTGRES_PASSWORD:-postgres}
     ports:
       - "8081:8081"
-    restart: always
 
+  # Журнал уведомлений.
   notification-service:
+    <<: *service
     build: ./notification-service
+    container_name: booking_notification
+    environment:
+      CONNECTION_STRING: Host=db;Port=5432;Database=notifications_db;Username=${POSTGRES_USER:-postgres};Password=${POSTGRES_PASSWORD:-postgres}
     ports:
       - "8082:8082"
-    restart: always
+
+  # Каталог: отели, номера, отзывы.
+  hotel-service:
+    <<: *service
+    build: ./hotel-service
+    container_name: booking_hotel
+    environment:
+      CONNECTION_STRING: Host=db;Port=5432;Database=hotels_db;Username=${POSTGRES_USER:-postgres};Password=${POSTGRES_PASSWORD:-postgres}
+    ports:
+      - "8083:8083"
 
   db:
     image: postgres:16
     container_name: booking_db
     environment:
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=1234
-      - POSTGRES_DB=app
+      <<: *db-env
+      POSTGRES_DB: postgres
     ports:
       - "5432:5432"
     volumes:
       - db_data:/var/lib/postgresql/data
-    restart: always
+      - ./db/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres}"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    restart: unless-stopped
 
 volumes:
   db_data:

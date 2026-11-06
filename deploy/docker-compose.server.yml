@@ -1,0 +1,21 @@
+# Добавка для сервера: всё слушает только 127.0.0.1, наружу сайт отдаёт nginx хоста.
+# Запуск: docker compose -p bookingtemp -f docker-compose.yml -f deploy/docker-compose.server.yml up -d
+services:
+  web:
+    ports: !override
+      - "127.0.0.1:8095:80"
+  booking-service:
+    ports: !override
+      - "127.0.0.1:18080:8080"
+  user-service:
+    ports: !override
+      - "127.0.0.1:18081:8081"
+  notification-service:
+    ports: !override
+      - "127.0.0.1:18082:8082"
+  hotel-service:
+    ports: !override
+      - "127.0.0.1:18083:8083"
+  db:
+    ports: !override
+      - "127.0.0.1:15432:5432"

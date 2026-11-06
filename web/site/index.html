@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Ночлег — бронирование отелей</title>
+  <meta name="description" content="Учебный сервис бронирования отелей на микросервисах.">
+  <meta name="theme-color" content="#0b0b0c">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap&subset=cyrillic" rel="stylesheet">
+  <link rel="stylesheet" href="/styles.css?v=2">
+</head>
+<body>
+  <header class="top">
+    <a class="logo" href="#/">Ночлег<span>.</span></a>
+    <nav class="nav">
+      <a href="#/" data-nav="home">Отели</a>
+      <a href="#/bookings" data-nav="bookings">Мои брони</a>
+      <a href="#/system" data-nav="system">Система</a>
+    </nav>
+  </header>
+
+  <main id="app" tabindex="-1"></main>
+
+  <footer class="foot">
+    <div class="foot-row">
+      <div>
+        <div class="logo logo-sm">Ночлег<span>.</span></div>
+        <p class="muted">Учебный проект: микросервисы на .NET 8, PostgreSQL 16 и Docker Compose.<br>Брони ненастоящие, письма не отправляются.</p>
+      </div>
+      <div class="mono foot-meta">
+        <div>web · booking · hotel · user · notification · postgres</div>
+        <div>Е. Диколенко, Д. Морозов — 2026</div>
+      </div>
+    </div>
+  </footer>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <script src="/app.js?v=2"></script>
+</body>
+</html>

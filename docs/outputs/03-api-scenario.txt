@@ -1,0 +1,55 @@
+
+==== 1. Все сервисы живы (health через шлюз)
+$ for s in hotel booking user notification; do curl -s http://127.0.0.1:8095/api/health/$s; echo; done
+{"status":"Healthy","service":"hotel-service"}
+{"status":"Healthy","service":"booking-service"}
+{"status":"Healthy","service":"user-service"}
+{"status":"Healthy","service":"notification-service"}
+
+
+==== 2. hotel-service: города
+$ curl -s http://127.0.0.1:8095/api/hotels/cities
+["Екатеринбург","Казань","Калининград","Красная Поляна","Листвянка","Москва","Нижний Новгород","Санкт-Петербург","Сортавала","Сочи","Суздаль","Териберка"]
+
+==== 3. hotel-service: отели в Казани
+$ curl -s 'http://127.0.0.1:8095/api/hotels?city=%D0%9A%D0%B0%D0%B7%D0%B0%D0%BD%D1%8C'
+[{"id":4,"name":"Обсерватория","city":"Казань","address":"Улица Баумана","stars":4,"pricePerNight":7800,"rating":9.2,"reviewsCount":4,"tagline":"Панорамная крыша над старым городом.","description":"Отель в бывшем здании типографии. На последнем этаже — терраса с телескопом и ночными экскурсиями по звёздному небу.","imageUrl":"/img/hotel-4.jpg","amenities":["Wi-Fi","Терраса","Завтрак","Трансфер"]}]
+
+==== 4. hotel-service: карточка отеля №4 (номера и отзывы)
+$ curl -s http://127.0.0.1:8095/api/hotels/4 | head -c 700
+{"hotel":{"id":4,"name":"Обсерватория","city":"Казань","address":"Улица Баумана","stars":4,"pricePerNight":7800,"rating":9.2,"reviewsCount":4,"tagline":"Панорамная крыша над старым городом.","description":"Отель в бывшем здании типографии. На последнем этаже — терраса с телескопом и ночными экскурсиями по звёздному небу.","imageUrl":"/img/hotel-4.jpg","amenities":["Wi-Fi","Терраса","Завтрак","Трансфер"]},"rooms":[{"id":10,"hotelId":4,"type":"Стандарт","capacity":2,"price":7800},{"id":11,"hotelId":4,"type":
+
+==== 5. booking-service: какие номера отеля №4 заняты с 2026-11-26 по 2026-11-29
+$ curl -s 'http://127.0.0.1:8095/api/availability?hotelId=4&checkIn=2026-11-26&checkOut=2026-11-29'
+{"hotelId":4,"checkIn":"2026-11-26","checkOut":"2026-11-29","busyRoomIds":[]}
+
+==== 6. booking-service: СОЗДАТЬ БРОНЬ (booking → hotel, user, notification)
+$ curl -s -w '\nHTTP %{http_code}' -X POST http://127.0.0.1:8095/api/bookings -H 'Content-Type: application/json' -d '{"roomId":10,"checkIn":"2026-11-26","checkOut":"2026-11-29","guests":2,"name":"Студент Демо","email":"student18117@example.com"}'
+{"id":3,"hotelId":4,"hotelName":"Обсерватория","city":"Казань","roomId":10,"roomType":"Стандарт","userId":3,"guestName":"Студент Демо","email":"student18117@example.com","checkIn":"2026-11-26","checkOut":"2026-11-29","guests":2,"nights":3,"totalPrice":23400,"status":"Confirmed","notified":true,"createdAt":"2026-11-06T13:25:15.5240995Z"}
+HTTP 201
+
+==== 7. Повторная бронь того же номера на те же даты → 409
+$ curl -s -w '\nHTTP %{http_code}' -X POST http://127.0.0.1:8095/api/bookings -H 'Content-Type: application/json' -d '{"roomId":10,"checkIn":"2026-11-26","checkOut":"2026-11-29","guests":2,"name":"Студент Демо","email":"student18117@example.com"}'
+{"error":"Номер уже занят на эти даты"}
+HTTP 409
+
+==== 8. user-service: гость создан автоматически
+$ curl -s 'http://127.0.0.1:8095/api/users/by-email?email=student18117@example.com'
+{"id":3,"name":"Студент Демо","email":"student18117@example.com","createdAt":"2026-11-06T13:25:15.340455Z"}
+
+==== 9. notification-service: уведомление записано
+$ curl -s 'http://127.0.0.1:8095/api/notifications?email=student18117@example.com'
+[{"id":4,"bookingId":3,"userId":3,"email":"student18117@example.com","type":"BookingConfirmed","message":"Бронь №3 подтверждена: Обсерватория, Стандарт, 26.11 — 29.11, 23400 ₽","createdAt":"2026-11-06T13:25:15.581026Z"}]
+
+==== 10. booking-service: брони гостя
+$ curl -s 'http://127.0.0.1:8095/api/bookings?email=student18117@example.com'
+[{"id":3,"hotelId":4,"hotelName":"Обсерватория","city":"Казань","roomId":10,"roomType":"Стандарт","userId":3,"guestName":"Студент Демо","email":"student18117@example.com","checkIn":"2026-11-26","checkOut":"2026-11-29","guests":2,"nights":3,"totalPrice":23400,"status":"Confirmed","notified":true,"createdAt":"2026-11-06T13:25:15.524099Z"}]
+
+==== 11. Отменить бронь №3
+$ curl -s -w '\nHTTP %{http_code}' -X POST http://127.0.0.1:8095/api/bookings/3/cancel
+{"id":3,"hotelId":4,"hotelName":"Обсерватория","city":"Казань","roomId":10,"roomType":"Стандарт","userId":3,"guestName":"Студент Демо","email":"student18117@example.com","checkIn":"2026-11-26","checkOut":"2026-11-29","guests":2,"nights":3,"totalPrice":23400,"status":"Cancelled","notified":true,"createdAt":"2026-11-06T13:25:15.524099Z"}
+HTTP 200
+
+==== 12. Уведомления после отмены
+$ curl -s 'http://127.0.0.1:8095/api/notifications?email=student18117@example.com'
+[{"id":5,"bookingId":3,"userId":3,"email":"student18117@example.com","type":"BookingCancelled","message":"Бронь №3 в «Обсерватория» отменена","createdAt":"2026-11-06T13:25:15.975937Z"},{"id":4,"bookingId":3,"userId":3,"email":"student18117@example.com","type":"BookingConfirmed","message":"Бронь №3 подтверждена: Обсерватория, Стандарт, 26.11 — 29.11, 23400 ₽","createdAt":"2026-11-06T13:25:15.581026Z"}]
